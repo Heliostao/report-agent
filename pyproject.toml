@@ -1,0 +1,31 @@
+[project]
+name = "report-agent"
+version = "0.1.0"
+description = "智能投研研报分析系统 — 基于 LangGraph 的多智能体自动化研报 Pipeline"
+requires-python = ">=3.11"
+dependencies = [
+    "langgraph>=0.2.0",
+    "langchain-openai>=0.2.0",
+    "langchain-ollama>=0.2.0",
+    "langchain-chroma>=0.2.0",
+    "langchain-experimental>=0.3.0",
+    "langchain-community>=0.3.0",
+    "langchain-core>=0.3.0",
+    "chromadb>=0.5.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.0.0",
+    "httpx>=0.28.0",
+    "python-dotenv>=1.0.0",
+    "psycopg2-binary>=2.9.0",
+]
+
+[project.scripts]
+report-agent = "src.server:main"
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["src*"]

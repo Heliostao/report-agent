@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report Agent — 智能投研报告分析</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <!-- 顶栏 -->
+  <nav id="top-nav">
+    <a class="nav-brand" href="/">
+      <svg class="spike-mark" width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" fill="#141413"/>
+      </svg>
+      <span class="brand-text">Report Agent</span>
+    </a>
+    <div class="nav-links">
+      <span class="nav-tag">智能投研</span>
+    </div>
+  </nav>
+
+  <!-- 主体 -->
+  <main id="main-content">
+    <!-- Hero -->
+    <section id="hero">
+      <div class="hero-title">
+        <span class="hero-line hero-line-1">研报分析，</span>
+        <span class="hero-line hero-line-2">一眼看透。</span>
+      </div>
+      <p class="hero-sub">
+        上传券商研报或粘贴文本，AI 自动提取数据、联网验证、计算指标，生成结构化投研报告。
+      </p>
+    </section>
+
+    <!-- 输入区 -->
+    <section id="input-section">
+      <div class="input-card">
+        <!-- Tab 切换 -->
+        <div class="tab-bar">
+          <button class="tab active" data-tab="file">文件上传</button>
+          <button class="tab" data-tab="text">文本输入</button>
+        </div>
+
+        <!-- 文件上传面板 -->
+        <div id="panel-file" class="tab-panel active">
+          <div id="drop-zone" class="drop-zone">
+            <svg class="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            <p>拖拽 .txt / .md 文件到此处</p>
+            <span class="divider-text">或</span>
+            <label class="file-pick-btn" for="file-input">选择文件</label>
+            <input type="file" id="file-input" accept=".txt,.md" hidden>
+            <p id="file-name" class="file-name"></p>
+          </div>
+        </div>
+
+        <!-- 文本输入面板 -->
+        <div id="panel-text" class="tab-panel">
+          <textarea id="text-area" placeholder="在此粘贴研报文本，或直接与我对话……" rows="8"></textarea>
+        </div>
+
+        <!-- 操作按钮 -->
+        <button id="btn-analyze" class="btn-primary">
+          <span class="btn-label">开始分析</span>
+          <svg class="btn-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        <p id="input-hint" class="input-hint">仅支持纯文本格式 (.txt / .md)</p>
+      </div>
+    </section>
+
+    <!-- 加载动画（仅文件上传使用，含研报步骤动画） -->
+    <section id="loading-section" class="hidden">
+      <div class="loading-card">
+        <div class="loading-steps">
+          <div class="step" data-step="parse">解析文档…</div>
+          <div class="step" data-step="extract">提取数据…</div>
+          <div class="step" data-step="verify">联网验证…</div>
+          <div class="step" data-step="calc">计算指标…</div>
+          <div class="step" data-step="report">生成报告…</div>
+          <div class="step" data-step="review">质量审核…</div>
+        </div>
+        <div class="loading-bar"><div class="loading-fill"></div></div>
+        <p id="loading-label" class="loading-label">正在分析研报…</p>
+      </div>
+    </section>
+
+    <!-- 轻量思考状态（文本输入用，无进度条） -->
+    <section id="thinking-section" class="hidden">
+      <div class="thinking-card">
+        <span class="thinking-dot"></span>
+        <span id="thinking-label" class="thinking-label">思考中…</span>
+      </div>
+    </section>
+
+    <!-- 聊天历史（气泡对话列表） -->
+    <section id="chat-history" class="hidden">
+      <div id="chat-messages"></div>
+    </section>
+
+    <!-- 报告区 -->
+    <section id="report-section" class="hidden">
+      <article id="report-content" class="report-card markdown-body"></article>
+      <div id="report-meta" class="report-meta"></div>
+    </section>
+  </main>
+
+  <!-- 页脚 -->
+  <footer id="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg class="spike-mark" width="16" height="16" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2L14 10L22 12L14 14L12 22L10 14L2 12L10 10Z" fill="#a09d96"/>
+        </svg>
+        <span>Report Agent</span>
+      </div>
+      <p>智能投研报告分析系统 · Powered by LangGraph</p>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
