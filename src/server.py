@@ -86,19 +86,16 @@ async def analyze_text(body: TextInput):
 
 @app.post("/api/analyze/file")
 async def analyze_file(file: UploadFile = File(...)):
-    """接收 .txt/.md 文件，运行完整研报分析流程。"""
+    """接收 PDF / Word / PPT / Excel / txt / md 文件，运行完整研报分析流程。"""
     ext = os.path.splitext(file.filename or "")[1].lower()
-    if ext not in (".txt", ".md"):
-        return {"type": "error", "message": f"不支持的文件格式: {ext}，仅支持 .txt / .md"}
+    if ext not in (".pdf", ".doc", ".docx", ".ppt", ".pptx", ".xls", ".xlsx", ".txt", ".md"):
+        return {"type": "error", "message": f"不支持的文件格式: {ext}，支持 PDF / Word / PPT / Excel / txt / md"}
 
     content = await file.read()
-    text = content.decode("utf-8")
 
-    # 写入临时文件
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=ext, delete=False, encoding="utf-8"
-    ) as tmp:
-        tmp.write(text)
+    # 二进制直接落盘（PDF / Word / PPT / Excel 是二进制格式，不能 decode；txt / md 也能直接写）
+    with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+        tmp.write(content)
         tmp_path = tmp.name
 
     try:

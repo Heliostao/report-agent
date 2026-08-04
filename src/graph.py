@@ -84,7 +84,17 @@ workflow.add_conditional_edges("router_node", route_intent, {
     "parse_document_node": "parse_document_node",
 })
 workflow.add_edge("chat_node", END)
-workflow.add_edge("parse_document_node", "extract_data_node")
+def route_after_parse(state: ResearchState):
+    """文档解析后路由：有错误则中止，成功则继续提取。"""
+    if state.get("error"):
+        return END
+    return "extract_data_node"
+
+
+workflow.add_conditional_edges("parse_document_node", route_after_parse, {
+    "extract_data_node": "extract_data_node",
+    END: END,
+})
 workflow.add_edge("extract_data_node", "verify_data_node")
 workflow.add_edge("verify_data_node", "calc_metrics_node")
 workflow.add_edge("calc_metrics_node", "generate_report_node")

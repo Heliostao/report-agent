@@ -18,9 +18,6 @@ assist_model = os.getenv("ASSIST_MODEL", "deepseek-v4-pro")
 assist_model_url = os.getenv("ASSIST_BASE_URL")
 assist_model_api_key = os.getenv("ASSIST_API_KEY")
 
-# redis 配置
-redis_url = os.getenv("REDIS_URL")
-
 # PostgresSQL配置
 postgres_url =os.getenv("POSTGRES_URL")
 
@@ -31,4 +28,7 @@ chroma_collection = os.getenv("CHROMA_COLLECTION")
 
 # mcp-aktools — A 股金融数据 MCP（本地 Docker: http://localhost:8808/mcp）
 aktools_mcp_url = os.getenv("AKTOOLS_MCP_URL", "http://localhost:8808/mcp")
+
+# MinerU 文档解析 API
+mineru_api_key = os.getenv("MINERU_API_KEY", "")
 

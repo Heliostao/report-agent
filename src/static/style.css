@@ -449,9 +449,23 @@ body.loaded .hero-sub {
 
 /* ────────────── Footer ────────────── */
 #footer {
+  position: relative;
   background: var(--surface-dark);
   padding: var(--spacing-xxl) var(--spacing-lg);
   text-align: center;
+}
+.footer-version {
+  position: absolute;
+  bottom: var(--spacing-md);
+  left: var(--spacing-lg);
+  font-family: var(--ff-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--on-dark-soft);
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border: 1px solid rgba(160, 157, 150, 0.25);
+  border-radius: var(--radius-pill);
 }
 .footer-inner {
   max-width: 860px; margin: 0 auto;

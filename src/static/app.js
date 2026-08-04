@@ -66,8 +66,6 @@ function switchTab(tab) {
   tabText.classList.toggle("active", tab === "text");
   panelFile.classList.toggle("active", tab === "file");
   panelText.classList.toggle("active", tab === "text");
-  // Tab 切换只改变视图，不销毁用户已填写的数据。
-  // 文件和文本内容保留，直到刷新页面或重新上传/输入。
 }
 
 /* ────────────── File handling ────────────── */

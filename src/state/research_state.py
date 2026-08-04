@@ -1,8 +1,8 @@
 """
 定义共享状态
 这个状态包含所有用到的字段
-0：用户输入研报文件（.txt / .md），也就是纯文本文件路径
-1：纯文本文件读取后按语义切分为 chunks，输出 llm 能看懂的片段列表
+0：用户输入研报文件（PDF / Word / PPT / Excel / txt / md），文件路径或上传到后端的临时路径
+1：文件经 mineru 本地引擎解析为 Markdown，纯文本按语义切分为 chunks
 2：将这些片段给 llm 看，让其从诸多片段中提取出有用的信息，产出 ExtractedData 即提取后的数据
 3：提取完数据还没完，还要进行联网验证是否正确，通过 MCP Server 进行联网验证，并查询过往历史研报，标注置信度 VerifiedItem
 4：接着拿到数据调用工具，纯计算比率，将原始数据变成可分析的比率 calculated_metrics
@@ -60,7 +60,7 @@ class ReportSummary(TypedDict):
 # 定义共享状态
 class ResearchState(TypedDict, total=False):
     # 输入
-    file_path: str  # 研报文件路径（.txt / .md，可选）
+    file_path: str  # 研报文件路径（PDF / Word / PPT / Excel / txt / md，可选）
     user_message: str  # 用户直接输入的文本（可选，意图路由用）
     # 意图路由
     intent: str  # "chat" | "research"，由 router_node 判定

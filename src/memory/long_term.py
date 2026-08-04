@@ -62,8 +62,8 @@ def init_db():
         cur = conn.cursor()
         cur.execute(DDL)
         conn.commit()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[long_term] 数据库初始化失败（不影响对话功能）：{e}")
     finally:
         if cur:
             cur.close()
@@ -112,39 +112,6 @@ def save_report(state: dict) -> bool:
         return True
     except Exception:
         return False
-    finally:
-        if cur:
-            cur.close()
-        if conn:
-            conn.close()
-
-
-def get_file_history(file_path: str, limit: int = 5) -> list[dict]:
-    conn = None
-    cur = None
-    try:
-        conn = _get_conn()
-        cur = conn.cursor()
-        cur.execute(
-            """SELECT company_name, rating, one_liner, key_data_table, created_at
-               FROM report_summaries
-               WHERE file_path = %s
-               ORDER BY created_at DESC LIMIT %s""",
-            (file_path, limit),
-        )
-        rows = cur.fetchall()
-        return [
-            {
-                "company_name": r[0],
-                "rating": r[1],
-                "one_liner": r[2],
-                "key_data_table": r[3],
-                "created_at": r[4].isoformat() if r[4] else None,
-            }
-            for r in rows
-        ]
-    except Exception:
-        return []
     finally:
         if cur:
             cur.close()

@@ -45,7 +45,7 @@ async def _init_session() -> None:
             "params": {
                 "protocolVersion": "2024-11-05",
                 "capabilities": {},
-                "clientInfo": {"name": "report-agent", "version": "1.0"},
+                "clientInfo": {"name": "report-agent", "version": "1.12"},
             },
             "id": _next_id(),
         },
@@ -170,6 +170,4 @@ async def get_financial_indicators_a(symbol: str) -> str:
     return await _call_tool("stock_indicators_a", {"symbol": symbol})
 
 
-async def get_stock_news(symbol: str) -> str:
-    """获取个股相关新闻。"""
-    return await _call_tool("stock_news", {"symbol": symbol})
+
