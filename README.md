@@ -28,15 +28,63 @@
 - **MinerU SDK 客户端**：新增 `mineru_client.py`，完整封装 create_task → 轮询 → 解析全链路，支持 multipart 文件上传与 URL 提交两种模式，PyPDFLoader 自动降级
 - **配置层扩展**：`.env` 新增 `MINERU_API_KEY`，`requirements.txt` 新增 `sentence-transformers`、`langchain`
 
-## 核心能力
+## MVP 迭代记录
 
-- **文档解析**：`langchain-mineru`（MinerULoader flash 模式）云端解析 PDF/Word/PPT/Excel/图片 → Markdown，免费免 token，RecursiveCharacterTextSplitter 语义切片入库
-- **财务提取**：LLM 读取全文 Markdown，自动提取营收、净利润、EPS、PE、目标价、评级等关键指标
-- **数据验证**：通过 MCP 协议对接 A 股金融数据库，交叉比对并标注置信度
-- **指标计算**：工具调用方式计算 PE、PB、ROE 等衍生估值指标
-- **报告生成**：整合提取 + 验证 + 计算 + RAG 交叉验证（MMR 检索 + Reranker 重排），生成七章结构化研报
-- **质量审核**：独立审核模型复核准确性，不通过则带反馈重试（最多 1 次）
-- **闲聊对话**：支持自然语言查询历史分析记录和自由对话
+**V1.0** — 基础研报分析流水线：纯文本输入 → 数据提取 → 联网验证 → 指标计算 → 报告生成 → 质量审核，6 节点 LangGraph 工作流。双模型策略（主模型 qwen3.7-plus 负责生成，辅助模型 deepseek-v4-pro 负责审核），Ollama 本地 embedding + ChromaDB 向量库 + PostgreSQL 长期记忆。
+
+**V1.1** — 文档解析突破：集成 MinerU v4 API，PDF/Word/PPT/Excel/图片直接上传解析为结构化 Markdown。RAG 检索链路从纯相似度搜索重构为 MMR 检索 + CrossEncoderReranker（bge-reranker-large）全局重排。文档分割从 SemanticChunker 切换为 RecursiveCharacterTextSplitter（中文标点优先分隔符）。
+
+**V1.11** — API 修复与前端完善：修正 MinerU v4 仅接受公网 URL 的调用方式，server.py 改为二进制直接落盘，前端全格式文件上传、页脚版本号。
+
+**V1.12** — 本地 GPU 引擎尝试：集成 mineru 本地引擎（HuggingFace VLM + PyTorch），GPU 本地推理 PDF/Office 文档。移除 python-docx、python-pptx 等自定义解析分支，统一由 mineru 处理。清理 langchain-experimental、pypdf 等未使用依赖。
+
+**V1.2** — 轻量化上云：本地 mineru 引擎切回云端 `langchain-mineru` flash 模式，移除 torch/torchvision/transformers/accelerate 四个重型依赖，磁盘占用减少约 8GB，部署门槛大幅降低。新增 router_node 意图分类节点，闲聊与研究双通道分离。验证 Prompt 三段式合并为一步比对。
+
+## 系统架构
+
+```mermaid
+graph TD
+    START([用户输入 文件/文本]) --> ROUTER{router_node<br/>LLM 意图分类}
+    ROUTER -->|chat| CHAT[chat_node<br/>闲聊对话 / 历史查询]
+    CHAT --> END1([结束])
+    ROUTER -->|research| PARSE[parse_document<br/>MinerU 云端解析<br/>+ 语义切片 + 向量入库]
+    PARSE -->|解析成功| EXTRACT[extract_data<br/>两步 LLM 提取<br/>元信息 + 财务数据]
+    PARSE -->|解析失败| END2([结束])
+    EXTRACT --> VERIFY[verify_data<br/>MCP 金融数据库<br/>交叉比对 + 置信度标注]
+    VERIFY --> CALC[calc_metrics<br/>Agent 自主决策<br/>调用 PE/PB/ROE 计算工具]
+    CALC --> REPORT[generate_report<br/>RAG 交叉验证 + LLM<br/>生成七章结构化研报]
+    REPORT -->|首次生成| REVIEW[review_quality<br/>独立模型 5 维度审核<br/>数字溯源 / 来源标注]
+    REPORT -->|重写后| END3([结束])
+    REVIEW -->|通过| END4([结束])
+    REVIEW -->|不通过 ≤1次| REPORT
+    REVIEW -->|不通过 >1次| END5([结束])
+```
+
+## 核心流程
+
+**router_node（意图分类）** — LLM 全量语义判断用户输入是闲聊还是研报分析。有文件上传则直接进入研究流程。曾用关键词匹配但"你是研报助手吗"之类的能力询问含"研报"关键词会被误判，故全量交给 LLM。
+
+**chat_node（闲聊对话）** — 二级意图分类：纯闲聊（≤3 句回复）或历史查询（从 PostgreSQL 搜索过往分析记录）。支持模糊搜索公司名，保留最近 10 条对话记忆。
+
+**parse_document（文档解析）** — `langchain-mineru` flash 模式下，文件上传至 mineru.net 云端解析为结构化 Markdown，自动识别表格、公式、排版。输出经 RecursiveCharacterTextSplitter（chunk_size=1024, overlap=150, 中文标点优先）语义切片后写入 ChromaDB，已索引文件自动去重。
+
+**extract_data（数据提取）** — 两步 LLM 提取：先提取公司名、股票代码、评级、目标价等元信息，再基于上下文提取营收、净利润、EPS、PE、PB、ROE 等 17 个财务指标及核心观点、风险提示。两步各自独立容错，一步失败不阻断另一路。
+
+**verify_data（数据验证）** — MCP 协议对接 AKTools A 股金融数据库。自动搜索股票代码 → 拉取公开财报指标 → LLM 一次性比对研报值，输出四级置信度（high/medium/low/unverified）。
+
+**calc_metrics（指标计算，Agent 节点）** — LLM 自主决策调用 4 个 Python 计算工具（calc_pe_ratio / calc_pb_ratio / calc_roe / calc_growth_rate）。优先使用验证通过的高置信度公开数据替代研报原始值。LLM 不负责数学运算，只负责决策调用哪些工具。
+
+**generate_report（报告生成）** — 整合提取 + 验证 + 计算 + RAG 交叉验证（多查询 MMR 检索 + CrossEncoderReranker 重排），生成七章结构化 Markdown 研报：研报概览、核心观点解读、关键财务分析、估值与验证分析、历史研报交叉验证、风险提示、总结。所有数字标注来源，低置信度指标强制提醒。
+
+**review_quality（质量审核）** — 独立模型（温度=0）从数据准确性、来源标注、置信度披露、章节完整性、格式规范五维度审核。硬约束：RAG 交叉验证引用必须有原文依据，数字必须在源数据中有对应值。不通过则带具体反馈回退重写，最多 1 次。
+
+## MinerU 集成说明
+
+研报分析的核心瓶颈在于 PDF 解析：券商研报普遍使用双栏排版、嵌入图表、混合表格，传统 PyPDF2/pdfplumber 等工具提取效果极差，表格错位、段落断裂是常态。
+
+本项目选用 [MinerU](https://mineru.net) 解决文档解析问题，其 VLM 多模态模型能自动识别 PDF/Word/PPT/Excel/图片中的布局、表格、公式和排版，输出高质量 Markdown。集成方式采用 [langchain-mineru](https://pypi.org/project/langchain-mineru/) 的 `MinerULoader`，flash 模式免费免注册，文件上传至 mineru.net 云端完成解析，返回 LangChain Document 对象直接接入后续 RAG 流程。整个解析链路无需 GPU、无需本地模型、无需额外配置，一行 `pip install langchain-mineru` 即可。
+
+Flash 模式限制：单文件 ≤10MB、≤20 页。超出限制可申请免费 API Token 切换 precision 模式（支持 200MB、600 页，更好的表格/公式识别）。
 
 ## 技术栈
 
@@ -139,7 +187,7 @@ src/
 ├── config/                # 配置（环境变量读取）
 ├── models/                # LLM 模型实例
 ├── state/                 # 共享状态 TypedDict
-├── nodes/                 # 7 个图节点
+├── nodes/                 # 7 个节点文件（+ router_node 内联在 graph.py）
 │   ├── parse_document.py
 │   ├── extract_data.py
 │   ├── verify_data.py
