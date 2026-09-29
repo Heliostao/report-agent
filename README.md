@@ -1,4 +1,4 @@
-# Report Agent — 智能投研研报分析系统 V1.2
+# Report Agent — AI金融研报分析系统 V1.2
 
 基于 LangGraph 多智能体协作框架，实现从非结构化研报文档到结构化投资分析报告的自动化 Pipeline。
 
